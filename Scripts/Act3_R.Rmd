@@ -2,27 +2,71 @@
 title: "Act3_R"
 author: "Alba, Laura, Lidia y Carmen"
 date: "2025-01-21"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    fig_caption: true
+    css: logos_css/usr_styles.css
+  word_document:
+    toc: true
+  pdf_document:
+    toc: true
+subtitle: "Actividad 3: Análisis de un caso práctico en R"
+params:
+  mostra: true
+always_allow_html: true
 ---
+
+```{=html}
+<script>
+$(document).ready(function() {
+  $head = $('#header');
+
+  $head.prepend('<img src=\"logos_css/Logo_UNIR.png" alt="Logo_UNIR" style="display: block; margin: 0 auto; width: 185px;">');
+});
+</script>
+
+```
+
+#Objetivo
+
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+#Preparación del lugar de trabajo
+#cada uno que ponga su wd en comentario al acabar
+
+#wd_Carmen:
+setwd("/Users/carme/OneDrive/Escritorio/R/Master_bioinformatica/Estadistica_R/actividades/Act3_R")
+
+#cargar librerias
+library(ggplot2)
+library(dplyr)
+library(nortest)
+library(car)
+library(gtsummary)
+library(gt)
+
+#Cargar base de datos
+dataset <- read.csv("Datos/Dataset expresión genes.csv")
+
 ```
 
-## Actividad 3: Análisis de un caso práctico en R
 
 
 
-```{r cars}
-summary(cars)
-```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+\`\`\`  
+
+<hr />
+
+<p style="text-align: center;">
+  <a href="https://www.unir.net/" style="color: #808080;"><em>https://www.unir.net/</em></a>
+</p>
