@@ -1,0 +1,662 @@
+---
+title: "Act3_R"
+author: "Alba, Laura, Lidia y Carmen"
+date: "2025-01-21"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    fig_caption: true
+    css: logos_css/usr_styles.css
+  word_document:
+    toc: true
+  pdf_document:
+    toc: true
+subtitle: "Actividad 3: Análisis de un caso práctico en R"
+params:
+  mostra: true
+always_allow_html: true
+---
+
+```{=html}
+<script>
+$(document).ready(function() {
+  $head = $('#header');
+
+  $head.prepend('<img src=\"logos_css/Logo_UNIR.png" alt="Logo_UNIR" style="display: block; margin: 0 auto; width: 185px;">');
+});
+</script>
+
+```
+# Actividad 3 Grupal R y Estadística para Ciencias de la Salud
+## Análisis de un caso práctico en R
+
+Con esta actividad se busca aplicar todos los conceptos aprendidos hasta el momento, además de trabajar en un entorno colaborativo, para resolver un caso práctico fictício, mediante la herramienta bioinformática R. Para realizar el estudio se usará un dataset que contiene información de la expresión de 46 genes en 65 pacientes, cada uno con distinto tipos de tratamiento y características tumorales. Se deben tratar los siguientes puntos:
+
+1.	Abrir la base de datos y explorarlos
+2.	PCA
+3.	Gráficos descriptivos
+4.	Tabla descriptiva
+5.	Modelo predictivo de regresión logística
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#Preparación del lugar de trabajo
+#cada uno que ponga su wd en comentario al acabar
+
+#wd_Carmen:
+setwd("/Users/carme/OneDrive/Escritorio/R/Master_bioinformatica/Estadistica_R/actividades/Act3_R")
+
+#cargar librerias
+library(ggplot2)
+library(dplyr)
+library(nortest)
+library(car)
+library(gtsummary)
+library(gt)
+library(factoextra) # PCA
+
+#Cargar base de datos
+dataset <- read.csv("Datos/Dataset expresión genes.csv")
+
+```
+
+Lidia
+```{r datos y librerias}
+# Cargar las librerias de interés
+library(dplyr)
+library(ggplot2)
+library(readr)
+
+# Cargar el set de datos
+
+dataset <- read.csv("C:/Users/lidia/Desktop/LIDIA/MÀSTER BINFO/ASSIGNATURES/ESTADÍSTICA Y R PARA CIENCIAS DE LA SALUD/ACTIVIDADES/ACTIVIDAD 3 GRUPAL/Actividad 3 Grupal Estadistica y R/Dataset expresión genes.csv")
+
+# Resumen inicial de los datos
+summary(dataset)
+str(dataset)
+```
+
+Las variables descriptivas de nuestro set de datos contiene variables categoricas, como sexo, hta, exfumador y variables continuas como edad. Hay variables bioquímicas con el recuento de los distintos genes analizados, y tienen valores relativamente bajos, lo que indica que podrian estar normalizados ya o en escala logarítmica. También existen variables binarias (si/no).
+
+### Limpieza y preprocesamiento de los datos
+
+```{r preprocesamiento_datos}
+# Verificar valores nulos
+sum(is.na(dataset)) # Total de valores nulos
+colSums(is.na(dataset)) # Valores nulos por columna
+
+# Convertir variables categóricas en factores
+categorical_vars <- c("sexo", "exfumador", "hta", "dm", "alergia", "cardiopatia", "ETE", 
+                      "trat", "tumor", "extension") 
+dataset[categorical_vars] <- lapply(dataset[categorical_vars], as.factor)
+
+# Selección de variables para el PCA
+genes <- grep("^AQ_", colnames(dataset), value = TRUE) # Selecciona columnas de genes
+datos_genes <- dataset[, genes]
+
+# Verificar el rango de los datos de expresión génica
+summary(datos_genes)
+
+# Normalización datos de genes para asegurar que estan a la misma escala
+datos_genes_scaled <- scale(datos_genes)
+
+```
+
+Observaciones de los datos:
+
+a. Valores nulos: No se observan valores ausentes significativos.
+b. Estadísticas descriptivas: Los datos de genes están en un rango muy bajo (e.g., 10^-6 a 10^-3), indicando normalización o preprocesamiento previo.
+
+
+
+### Análisis de Componentes Principales (PCA)
+
+Para realizar el Análisis de Componentes Principales (PCA), usaremos la matriz de expresión génica normalizada para su cálculo. Deberemos seleccionar los componentes principales que expliquen al menos el 70% de la varianza, por lo que se debe determinar cuantos componentes son necesarios. 
+
+Se realiza el PCA utilizando la función prcomp() de la librería factoextra utilizando las variables de expresión de los genes. Después, se obtiene los *eigenvalues* del PCA mediante la función get_eigenvalue de la librería factoextra.
+```{r}
+# Calcular el PCA.¿Es necesario escalar si ya estamos usando datos escalados?
+pca_result <- prcomp(datos_genes_scaled, center = TRUE, scale. = TRUE)
+
+eigenvalues<- get_eigenvalue(pca_result)
+eigenvalues
+```
+En la primera columna de esta tabla se pueden ver los eigenvalue, que es el valor numérico de la contribución de cada dimensión a la varinaza. En la segunda columna aparece el porcentaje de varianza que explica esa dimensión y en la tercera columna la varianza acumulada hasta el 100% que es la suma de todas las dimensiones.
+Como se puede ver, la primera dimensión explica el 52,5% de la varianza y la segunda un 6,5%. Para explicar al menos el 70% de la varianza se tendrían que seleccionar las **5 primeras dimensiones** que explicarían el **72,3%** de la varianza.
+
+Esto también se puede visualizar en forma de gráfico (*screeplot*) utilizando la función fviz_eig() de la librería facto extra. Se establece el límite superior del eje Y en 60 ya que la dimensión 1 explica más del 50% de la varianza.
+```{r}
+# Scree plot: varianza explicada por componente
+fviz_eig(pca_result, addlabels = TRUE, ylim = c(0, 60), main = "Varianza Acumulada Explicada", ylab = "Varianza Acumulada Explicada (%) del PCA", xlab = "Dimensiones")
+```
+En el *scree plot* se pueden ver en el eje horizontal las dimensiones o componentes principales y en el eje vertical, se muestra el porcentaje de la varianza total explicada por cada componente. Como se ha comentado antes, la primera dimensión explica el 52.5% de la varianza total, lo que indica que captura la mayor parte de la información. A partir de la primera dimensión, la varianza explicada por las siguientes disminuye significativamente, oscilando entre 6.3% y 2%.
+
+Utilizando la función get_pca_var() de la librería factoextra, se obtiene diferente información del PCA. El objeto "coord" muestra las coordendas en el eje X e Y de las diferentes variables para construir un grafico de dispersión. En "cor" aparecen las correlaciones entre las variables y las dimensiones y en "cos2" la calidad de la variable.
+```{r}
+var<- get_pca_var(pca_result)
+var$contrib
+```
+El objeto "contrib" contiene las contribuciones de las variables a las distintas dimensiones en forma de porcentaje, reflejando la importancia relativa de cada variable en la construcción de una dimensión. En este caso, para dimensión 1, las variables AQ_CCL5 (3.39%) y AQ_FASN (3.18%) tienen una mayor contribución relativa y para dimensión 3, AQ_CHKA tiene una contribución muy alta (7.80%), lo que sugiere que esta dimensión captura características asociadas con esta variable.
+
+Mediante la función fviz_pca_var() de la librería factoextra se representan las varibales en un plano donde el eje X es la dimensión 1 y el eje Y la dimensión 2.
+```{r}
+fviz_pca_var(pca_result,
+             col.var = "black",
+             repel = TRUE,
+             labelsize = 2
+) +
+  ggtitle("Proyección de las Variables en el Espacio de las Componentes Principales")
+```
+La myoría de las variables se asocian negativamente con la dimensión 1. En el caso de la dimensión 2 hay variables que se asocian tanto positivamente como negativamente. También se puden ver la variables ADIPOQ y NOX5 que se asocían positivamnete tanto con la dimensión 1 como con la 2. La longitud de la flecha indica el grado de asociación de las varibles con la dimensión, por lo que todas las variables excepto ADIPOQ y NOX5 por su longitud más corta, tienen una una gran asociación con las dimensiones. También se pude ver como muchas de las variables están en la misma dirección y muy cerca entre sí por lo que estárán correlacionadas positivamente entre sí.
+
+En este caso se colorean las variables en función del objeto "cos2" que indica la calidad o importancia de la representación de cada variable en el espacio de las componentes principales.
+```{r}
+fviz_pca_var(pca_result, 
+             col.var = "cos2", # Colorear según la contribución al PCA
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), # Gradiente de colores
+             repel = TRUE,
+             labelsize = 2
+) +
+  ggtitle("Proyección de las Variables en el Espacio de las Componentes Principales coloreadas en según cos2")
+```
+En este gráfico, los valores cercanos a 1 indican que la variable está bien representada en este espacio, mientras que los valores más bajos sugieren que la variable tiene una menor representación en estas dimensiones. Así, las únicas variables que tienen una menor representación son ADIPOQ y NOX. De esta forma, los genes que tienen mayor representación serán importantes para el análisis posterior.
+
+A continuación se visualiza la representación de la contribución global de cada variable a las dimensiones 1 a 5 mediante la función fviz_cos2 de la librería factoextra.
+```{r}
+fviz_cos2(pca_result,
+          choice = "var", 
+          axes = 1:5, # DUDA IMPORTANTE. HAY QUE PONER DE 1 A 5 PORQUE HEMOS SELECCIONADO LOS 5 PRIMEROS? CAMBIA MUCHO SI SE SELECCIONA 1:2?
+          labelsize = 1) +
+  ggtitle("Contribución de las Variables a las 5 Primeras Componentes Principales (cos²)") +
+  labs(y = "cos² (Calidad de Representación)")
+```
+Un valor de cos2 alto indica una buena representación de la variable en el componente principal, mientras que un valor bajo significa que la variable no está perfectamente representada. Como se puede ver en la gráfica, las variables con mejor representación son JAK1, NOX5 y ADIPOQ.
+
+Si se realiza un gráfico para ver como contribuyen los pacientes a las dimensiones 1 y 2.
+```{r}
+fviz_pca_ind(
+  pca_result,
+  col.ind = "cos2",
+  gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+  repel = TRUE) +
+  ggtitle("Proyección de los individuos en el Espacio de las Componentes Principales coloreadas en según cos2")
+```
+
+Los pacientes representados con color rojo (como el 1, 2, 60 y 28) tienen una contribución más alta a las dimensiones 1 y 2.
+
+```{r}
+fviz_pca_biplot(pca_result,
+                col.ind = "blue",
+                col.var = "red",
+                repel = TRUE,
+                labelsize = 4) + 
+  ggtitle("Proyección de Individuos y Variables en el Espacio de las Componentes Principales coloreadas en según cos2")
+```
+
+Los individuos y variables que se encuentran en el mismo cuadrante comparten la característica de tener valores altos o bajos para las dimensión1 o 2.
+
+
+
+Visualización gráfico PCA
+
+```{r PCA_plot, echo=FALSE}
+#Solo es la estructura, el codigo esta incompleto
+pca_data <- as.data.frame(pca_result$x)
+ggplot(pca_data, aes(PC1, PC2)) +
+  geom_point(aes(color = factor(dataset$trat))) +  
+  xlab(paste("PC1 -", round(summary(pca_result)$importance[2,1] * 100, 2), "% varianza")) +
+  ylab(paste("PC2 -", round(summary(pca_result)$importance[2,2] * 100, 2), "% varianza")) +
+  ggtitle("PCA de los Datos de Expresión de Genes") +
+  theme_minimal()
+
+
+```
+Existe una superposición significativa entre los tratamientos tratA y tratB, lo que sugiere que no están perfectamente separadas en las primeras dos dimensiones principales.
+
+Sin embargo, se pueden observar algunas muestras que se alejan de las demás, indicando posible variabilidad o patrones únicos.
+
+Conclusión: Aunque Dim1 y Dim2 explican una cantidad significativa de la varianza, no separan completamente las muestras por tratamiento. Esto podría requerir explorar dimensiones adicionales o realizar análisis complementarios.
+
+### Descriptiva de los componentes principales
+
+Biplot: Un gráfico que muestra tanto las puntuaciones de los componentes principales como las cargas de las variables en un solo gráfico.
+```{r descripcion, echo=FALSE}
+biplot(pca_result, scale = 0)
+```
+
+
+Gráfico de varianza explicada: Un gráfico de barras que muestra el porcentaje de varianza explicada por cada componente principal.
+
+```{r descripcion, echo=FALSE}
+biplot(pca_result, scale = 0)
+```
+
+Gráfico de acumulación de la varianza explicada: Muestra cómo se acumula la varianza a medida que se añaden componentes.
+
+```{r descripcion, echo=FALSE}
+cumulative_var_exp <- cumsum(var_exp)
+plot(cumulative_var_exp, type = "b", main = "Varianza Acumulada Explicada", ylab = "Varianza Acumulada (%)", xlab = "Componentes Principales")
+```
+
+```{r descripcion, echo=FALSE}
+#Cargar librerías
+library(ggplot2)
+library(patchwork)
+
+#No estan todos los genes ni tiene porque ser los correctos, se debe estudiar a partir del PCA cuales estan más correlacionados con las variables que expliquen el 70% de la varianza
+
+#Crear gráfico para cada gen (Boxplots)
+plot_AQ_ALOX5 <- ggplot(datos_genes, aes(x = trat, y = AQ_ALOX5, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_ALOX5",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+  
+plot_AQ_ALOX5
+print(plot_AQ_ALOX5)
+
+plot_AQ_CD274 <- ggplot(datos_genes, aes(x = trat, y = AQ_CD274, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_CD274",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+  
+plot_AQ_CD274 
+
+plot_AQ_CHKA <- ggplot(datos_genes, aes(x = trat, y = AQ_CHKA, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de _AQ_CHKA",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_CHKA
+
+
+plot_AQ_CSF2 <- ggplot(datos_genes, aes(x = trat, y = AQ_CSF2, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_CFS2",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_CSF2
+
+
+plot_AQ_FOXO3 <- ggplot(datos_genes, aes(x = trat, y = AQ_FOXO3, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_FOXO3",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_FOXO3
+
+
+plot_AQ_IL6 <- ggplot(datos_genes, aes(x = trat, y = AQ_IL6, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_IL6",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_IL6
+
+
+plot_AQ_LDHA <- ggplot(datos_genes, aes(x = trat, y = AQ_LDHA, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_LDHA",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_LDHA
+
+
+plot_AQ_LIF <- ggplot(datos_genes, aes(x = trat, y = AQ_LIF, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_LIF",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_LIF
+
+
+plot_AQ_MAPK1 <- ggplot(datos_genes, aes(x = trat, y = AQ_MAPK1, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_MAPK1",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_MAPK1
+
+
+plot_AQ_NOS2 <- ggplot(datos_genes, aes(x = trat, y = AQ_NOS2, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_NOS2",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_NOS2
+
+
+plot_AQ_IFNG <- ggplot(datos_genes, aes(x = trat, y = AQ_IFNG, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_IFNG",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_IFNG
+
+
+plot_AQ_PDCD1 <- ggplot(datos_genes, aes(x = trat, y = AQ_PDCD1, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_PDCD1",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_PDCD1
+
+plot_AQ_PPARG <- ggplot(datos_genes, aes(x = trat, y = AQ_PPARG, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_PPARG",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_PPARG
+
+
+plot_AQ_TGFB1 <- ggplot(datos_genes, aes(x = trat, y = AQ_TGFB1, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_TGFB1",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+
+plot_AQ_TGFB1
+
+plot_AQ_TNF <- ggplot(datos_genes, aes(x = trat, y = AQ_TNF, fill = trat)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("tratA" = "skyblue", "tratB" = "gold"))+
+  labs(title = "Expresión de AQ_TNF",
+       x = "Tratamiento",
+       y = "Expresión") +
+  theme_minimal()
+  
+plot_AQ_TNF
+```
+
+Combinar los gráficos en un solo layout con 3 columnas con Patchwork
+```{r}
+combined_plot <- plot_AQ_ALOX5 + plot_AQ_CD274 + plot_AQ_CHKA + plot_AQ_CSF2 +
+  plot_AQ_FOXO3 + plot_AQ_IL6 + plot_AQ_LDHA + plot_AQ_LIF +
+  plot_AQ_MAPK1 + plot_AQ_NOS2 + plot_AQ_IFNG + plot_AQ_PDCD1 +
+  plot_AQ_PPARG + plot_AQ_TGFB1 + plot_AQ_TNF +
+  plot_layout(ncol = 3)
+
+combined_plot
+```
+
+
+### Tablas descriptivas 
+
+## Análisis estadístico
+### Estudio de la normalidad
+
+Vamos a estudiar la distribución de los datos de trabajo, de esta forma estamos estudiando y comprobando la normalidad de los datos con los que debemos trabajar. Escogemos el test de Shapiro-Wilk ya que tenemos una muestra de N=65, y aunque excede un poco el rango óptimo de N>50 de este test, su sensibilidad sigue siendo adecuada para este grupo muestral. Las ventajas de este test es que es potente para este rango muestral, ya que es sensible a pequeñas desviaciones de normalidad. 
+
+```{r distribución}
+
+# Seleccionar las columnas de genes
+genes <- gene_data %>% select(starts_with("AQ_"))
+
+# Realizar pruebas de normalidad (Shapiro-Wilk)
+normalidad <- genes %>% 
+  summarise(across(everything(), ~ shapiro.test(.x)$p.value))
+
+# Visualizar normalidad gráficamente para cada gen
+par(mar = c(4, 4, 2, 1))  # Ajusta los márgenes: c(abajo, izquierda, arriba, derecha)
+for (gene in colnames(gene_data)[59:104]) {
+  # Histograma
+  hist(gene_data[[gene]], main = paste("Histograma de", gene), xlab = gene, col = "skyblue", breaks = 10)
+  
+  # Q-Q Plot
+  qqnorm(gene_data[[gene]], main = paste("Q-Q Plot de", gene))
+  qqline(gene_data[[gene]])
+}
+
+# Convertir resultados a un formato largo
+normalidad_larga <- normalidad %>% 
+  pivot_longer(everything(), names_to = "Gen", values_to = "p_value") %>% 
+  mutate(Normalidad = ifelse(p_value > 0.05, "Sí", "No"))
+
+normalidad_larga
+
+# Crear tabla de normalidad (Tabla 1)
+tabla_normalidad <- normalidad_larga %>%
+  mutate(Test = "Shapiro-Wilk",
+         Interpretación = ifelse(p_value > 0.05, "Distribución normal", "No sigue distribución normal")) %>%
+  select(Gen, Test, p_value, Interpretación) %>%
+  rename(Variable = Gen, `Valor p` = p_value)
+
+# Exportar tabla de normalidad a Word
+doc <- read_docx() %>%
+  body_add_par("Tabla 1: Prueba de normalidad (Shapiro-Wilk) para los genes", style = "heading 1") %>%
+  body_add_table(tabla_normalidad, style = "table_template") %>%
+  body_add_par("Nota: Los valores p se obtuvieron utilizando el test de Shapiro-Wilk para evaluar la normalidad de la expresión génica. p < 0.05 indica que los datos no siguen una distribución normal.", style = "Normal")
+
+# Guardar el documento
+print(doc, target = "Tabla_normalidad.docx")
+
+```
+
+#### Interpretación de los resultados del test Shapiro-Wilk
+
+#### Exploración detallada de los datos
+
+
+Antes de empezar con la parte de análisis descriptiva estadística, vamos a explorar un poco más los datos para ver si encontramos patrones y outliers, lo que nos permitirá determinar posteriormente que pruebas estadísticas son las más adecuadas:
+
+Los boxplots nos permitiran observar de forma gráfica los valores más extremos que pueden influenciar los análisis estadísticos. 
+
+El Heatmap nos permite ver los patrones de expresión entre los pacientes y los genes. Se ven las agrupaciones de forma visual. 
+
+La matriz de correlación evalua las relaciones entre los genes. Si encontramos genes con alta correlación podrian estar coexpresados, o formar parte de los mismos procesos biológicos. En este caso usamos Spearman, ya que los datos no tienen una distribución normal. 
+
+```{r exploración_datos}
+
+# Boxplots para genes seleccionados
+gene_data %>%
+  pivot_longer(cols = starts_with("AQ_"), names_to = "Gen", values_to = "Expresión") %>%
+  ggplot(aes(x = Gen, y = Expresión)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# Matriz de correlación
+corr_matrix <- cor(gene_data[,59:104], method = "spearman")
+pheatmap(corr_matrix)
+
+# Valores atípicos
+outliers <- function(x) {
+  q1 <- quantile(x, 0.25)
+  q3 <- quantile(x, 0.75)
+  iqr <- q3 - q1
+  x[x < (q1 - 1.5 * iqr) | x > (q3 + 1.5 * iqr)]
+}
+
+apply(gene_data[,59:104], 2, outliers)
+```
+
+### Análisis descriptiva estadística
+
+Como los datos no siguen una distribución normal, vamos a calcular la mediana y el rango interquartílico (p-25 p-75), en lugar de la mediana y la desviación estándar. 
+
+
+```{r descriptiva estadística}
+
+## Estadísticas descriptivas por tratamiento y tipo de tumor
+
+# Crear tabla descriptiva con gtsummary
+# Crear tabla descriptiva con múltiples niveles de estratificación
+tabla_descriptiva <- gene_data %>%
+  select(Tratamiento, Tipo_Tumor, starts_with("AQ_")) %>%
+  tbl_strata(
+    strata = Tratamiento,
+    .tbl_fun = ~ .x %>%
+      tbl_summary(by = Tipo_Tumor,
+                  statistic = all_continuous() ~ "{mean} ({sd})",
+                  digits = all_continuous() ~ 1) %>%
+      add_p()
+  )
+
+tabla_descriptiva
+
+# Visualización de los datos por tratamiento y tumor
+gene_data %>%
+  pivot_longer(cols = starts_with("AQ_"), names_to = "Gen", values_to = "Expresión") %>%
+  ggplot(aes(x = Tipo_Tumor, y = Expresión, fill = Tratamiento)) +
+  geom_boxplot() +
+  facet_wrap(~ Gen, scales = "free_y") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Expresión Génica por Tratamiento y Tumor")
+
+
+## Estadísticas descriptivas por edad categorizada
+
+# Categorizar edad
+mediana_edad <- median(gene_data$edad, na.rm = TRUE)
+gene_data <- gene_data %>% 
+  mutate(Edad_Categorica = ifelse(edad < mediana_edad, "< Mediana", "≥ Mediana"))
+
+# Crear tabla descriptiva
+tabla_edad <- gene_data %>%
+  select(Edad_Categorica, starts_with("AQ_")) %>%
+  tbl_summary(by = Edad_Categorica,
+              statistic = all_continuous() ~ "{median} ({p25}, {p75})",
+              digits = all_continuous() ~ 1) %>%
+  add_p()
+
+tabla_edad
+
+# Visualización de los datos por sexo biológico y edad
+gene_data %>%
+  pivot_longer(cols = starts_with("AQ_"), names_to = "Gen", values_to = "Expresión") %>%
+  ggplot(aes(x = Edad_Categorica, y = Expresión, fill = sexo)) +
+  geom_boxplot() +
+  facet_wrap(~ Gen, scales = "free_y") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Expresión Génica por Edad y Sexo")
+
+
+```
+
+#### Interpretación de los resultados del análisis descriptivo
+En los resultados se observa que:
+a. ETE (endocarditis trombótica no bacteriana): No muestra una gran diferencia entre grupos (p = 0.8), lo que indica que esta condición no varía significativamente según los tipos de tumor o tratamiento.
+b. Neumopatía: p > 0.9, lo que sugiere que no hay diferencias significativas.
+c. Hepatopatía: p = 0.7, también sin diferencias significativas.
+
+Aunque algunas condiciones clínicas no parecen diferir según el tratamiento/tumor, ciertos genes muestran diferencias significativas en su expresión, lo que puede indicar un papel en la respuesta al tratamiento o la progresión del tumor. AQ_STAT3 y AQ_CXCR1 podrían merecer una evaluación más profunda.
+
+### Pruebas de hipótesis
+Los test a aplicar deben ser para datos no paramétricos. Por este motivo, vamos a realizar la prueba de Kruskal-Wallis para comparar más de 2 grupos, es decir, observar si hay o no diferencias significativas entre tratamientos y/o tipos de tumor. También usaremos la prueba de Mann-Whitney, para comparar dos grupos, es decir el grupo de pacientes jovenes vs el de persones mayores por ejemplo. 
+
+```{r pruebas de hipótesis}
+# Kruskal-Wallis
+p_values_kruskal <- apply(gene_data[,59:104], 2, function(gen) {
+  kruskal.test(gen ~ Tratamiento, data = gene_data)$p.value
+})
+
+# Wilcox
+p_values_wilcox <- apply(gene_data[,59:104], 2, function(gen) {
+  wilcox.test(gen ~ Edad_Categorica, data = gene_data)$p.value
+})
+
+# Crear tabla de resultados
+resultados_pruebas <- data.frame(
+  Gen = colnames(gene_data[,59:104]),
+  Kruskal_P = p_values_kruskal,
+  Wilcox_P = p_values_wilcox
+)
+
+print(resultados_pruebas)
+
+# Visualización de los datos
+gene_data %>%
+  pivot_longer(cols = starts_with("AQ_"), names_to = "Gen", values_to = "Expresión") %>%
+  ggplot(aes(x = Tratamiento, y = Expresión, fill = Tipo_Tumor)) +
+  geom_boxplot() +
+  facet_wrap(~ Gen, scales = "free_y") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Expresión Génica por Tratamiento y Tumor")
+```
+
+#### Interpretación pruebas de hipótesis
+
+### Interpretación de los resultados
+
+
+### Exportación de los datos
+
+```{r exportar datos tabla word}
+
+# Crear documento de Word
+doc <- read_docx()
+
+# Exportar tabla descriptiva por tratamiento y tipo de tumor
+tabla_descriptiva_flex <- as_flex_table(tabla_descriptiva) # Convertir `tbl_summary` a flextable
+doc <- doc %>%
+  body_add_par("Tabla 1: Estadísticas descriptivas por tratamiento y tipo de tumor", style = "heading 1") %>%
+  body_add_flextable(tabla_descriptiva_flex)
+
+# Exportar tabla por edad categorizada
+tabla_edad_flex <- as_flex_table(tabla_edad) # Convertir `tbl_summary` a flextable
+doc <- doc %>%
+  body_add_par("Tabla 2: Estadísticas descriptivas por edad categorizada", style = "heading 1") %>%
+  body_add_flextable(tabla_edad_flex)
+
+# Guardar el documento
+print(doc, target = "Tablas_resultados.docx")
+
+```
+
+### Implementación de un modelo de regresión logística
+
+
+
+
+
+
+
+\`\`\`  
+
+<hr />
+
+<p style="text-align: center;">
+  <a href="https://www.unir.net/" style="color: #808080;"><em>https://www.unir.net/</em></a>
+</p>
