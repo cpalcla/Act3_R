@@ -467,14 +467,14 @@ La matriz de correlación evalua las relaciones entre los genes. Si encontramos 
 ```{r exploración_datos}
 
 # Boxplots para genes seleccionados
-gene_data %>%
+dataset %>%
   pivot_longer(cols = starts_with("AQ_"), names_to = "Gen", values_to = "Expresión") %>%
   ggplot(aes(x = Gen, y = Expresión)) +
   geom_boxplot() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 # Matriz de correlación
-corr_matrix <- cor(gene_data[,59:104], method = "spearman")
+corr_matrix <- cor(dataset[,59:104], method = "spearman")
 pheatmap(corr_matrix)
 
 # Valores atípicos
@@ -485,7 +485,7 @@ outliers <- function(x) {
   x[x < (q1 - 1.5 * iqr) | x > (q3 + 1.5 * iqr)]
 }
 
-apply(gene_data[,59:104], 2, outliers)
+apply(dataset[,59:104], 2, outliers)
 ```
 
 ### Análisis descriptiva estadística
@@ -499,12 +499,12 @@ Como los datos no siguen una distribución normal, vamos a calcular la mediana y
 
 # Crear tabla descriptiva con gtsummary
 # Crear tabla descriptiva con múltiples niveles de estratificación
-tabla_descriptiva <- gene_data %>%
-  select(Tratamiento, Tipo_Tumor, starts_with("AQ_")) %>%
+tabla_descriptiva <- dataset %>%
+  select(trat, tumor, starts_with("AQ_")) %>%
   tbl_strata(
-    strata = Tratamiento,
+    strata = trat,
     .tbl_fun = ~ .x %>%
-      tbl_summary(by = Tipo_Tumor,
+      tbl_summary(by = tumor,
                   statistic = all_continuous() ~ "{mean} ({sd})",
                   digits = all_continuous() ~ 1) %>%
       add_p()
@@ -513,9 +513,9 @@ tabla_descriptiva <- gene_data %>%
 tabla_descriptiva
 
 # Visualización de los datos por tratamiento y tumor
-gene_data %>%
+dataset %>%
   pivot_longer(cols = starts_with("AQ_"), names_to = "Gen", values_to = "Expresión") %>%
-  ggplot(aes(x = Tipo_Tumor, y = Expresión, fill = Tratamiento)) +
+  ggplot(aes(x = tumor, y = Expresión, fill = trat)) +
   geom_boxplot() +
   facet_wrap(~ Gen, scales = "free_y") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
@@ -525,12 +525,12 @@ gene_data %>%
 ## Estadísticas descriptivas por edad categorizada
 
 # Categorizar edad
-mediana_edad <- median(gene_data$edad, na.rm = TRUE)
-gene_data <- gene_data %>% 
+mediana_edad <- median(dataset$edad, na.rm = TRUE)
+dataset <- dataset %>% 
   mutate(Edad_Categorica = ifelse(edad < mediana_edad, "< Mediana", "≥ Mediana"))
 
 # Crear tabla descriptiva
-tabla_edad <- gene_data %>%
+tabla_edad <- dataset %>%
   select(Edad_Categorica, starts_with("AQ_")) %>%
   tbl_summary(by = Edad_Categorica,
               statistic = all_continuous() ~ "{median} ({p25}, {p75})",
@@ -540,7 +540,7 @@ tabla_edad <- gene_data %>%
 tabla_edad
 
 # Visualización de los datos por sexo biológico y edad
-gene_data %>%
+dataset %>%
   pivot_longer(cols = starts_with("AQ_"), names_to = "Gen", values_to = "Expresión") %>%
   ggplot(aes(x = Edad_Categorica, y = Expresión, fill = sexo)) +
   geom_boxplot() +
@@ -564,18 +564,18 @@ Los test a aplicar deben ser para datos no paramétricos. Por este motivo, vamos
 
 ```{r pruebas de hipótesis}
 # Kruskal-Wallis
-p_values_kruskal <- apply(gene_data[,59:104], 2, function(gen) {
-  kruskal.test(gen ~ Tratamiento, data = gene_data)$p.value
+p_values_kruskal <- apply(dataset[,59:104], 2, function(gen) {
+  kruskal.test(gen ~ trat, data = dataset)$p.value
 })
 
 # Wilcox
-p_values_wilcox <- apply(gene_data[,59:104], 2, function(gen) {
-  wilcox.test(gen ~ Edad_Categorica, data = gene_data)$p.value
+p_values_wilcox <- apply(dataset[,59:104], 2, function(gen) {
+  wilcox.test(gen ~ Edad_Categorica, data = dataset)$p.value
 })
 
 # Crear tabla de resultados
 resultados_pruebas <- data.frame(
-  Gen = colnames(gene_data[,59:104]),
+  Gen = colnames(dataset[,59:104]),
   Kruskal_P = p_values_kruskal,
   Wilcox_P = p_values_wilcox
 )
@@ -583,9 +583,9 @@ resultados_pruebas <- data.frame(
 print(resultados_pruebas)
 
 # Visualización de los datos
-gene_data %>%
+dataset %>%
   pivot_longer(cols = starts_with("AQ_"), names_to = "Gen", values_to = "Expresión") %>%
-  ggplot(aes(x = Tratamiento, y = Expresión, fill = Tipo_Tumor)) +
+  ggplot(aes(x = trat, y = Expresión, fill = tumor)) +
   geom_boxplot() +
   facet_wrap(~ Gen, scales = "free_y") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
@@ -646,3 +646,6 @@ print(doc, target = "Tablas_resultados.docx")
 <p style="text-align: center;">
   <a href="https://www.unir.net/" style="color: #808080;"><em>https://www.unir.net/</em></a>
 </p>
+
+
+
