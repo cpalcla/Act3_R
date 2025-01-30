@@ -398,8 +398,8 @@ combined_plot <- plot_AQ_ALOX5 + plot_AQ_CD274 + plot_AQ_CHKA + plot_AQ_CSF2 +
 combined_plot
 ```
 
-
-### Tablas descriptivas 
+Lidia 
+# Tablas descriptivas 
 
 ## Análisis estadístico
 ### Estudio de la normalidad
@@ -409,7 +409,7 @@ Vamos a estudiar la distribución de los datos de trabajo, de esta forma estamos
 ```{r distribución}
 
 # Seleccionar las columnas de genes
-genes <- gene_data %>% select(starts_with("AQ_"))
+genes <- dataset %>% select(starts_with("AQ_"))
 
 # Realizar pruebas de normalidad (Shapiro-Wilk)
 normalidad <- genes %>% 
@@ -417,13 +417,13 @@ normalidad <- genes %>%
 
 # Visualizar normalidad gráficamente para cada gen
 par(mar = c(4, 4, 2, 1))  # Ajusta los márgenes: c(abajo, izquierda, arriba, derecha)
-for (gene in colnames(gene_data)[59:104]) {
+for (gene in colnames(dataset)[59:104]) {
   # Histograma
-  hist(gene_data[[gene]], main = paste("Histograma de", gene), xlab = gene, col = "skyblue", breaks = 10)
+  hist(dataset[[gene]], main = paste("Histograma de", gene), xlab = gene, col = "skyblue", breaks = 10)
   
   # Q-Q Plot
-  qqnorm(gene_data[[gene]], main = paste("Q-Q Plot de", gene))
-  qqline(gene_data[[gene]])
+  qqnorm(dataset[[gene]], main = paste("Q-Q Plot de", gene))
+  qqline(dataset[[gene]])
 }
 
 # Convertir resultados a un formato largo
@@ -452,9 +452,9 @@ print(doc, target = "Tabla_normalidad.docx")
 ```
 
 #### Interpretación de los resultados del test Shapiro-Wilk
+Podemos observar que todos los p-valores de todos los genes son extremadamente bajos, p < 0.05. Esto significa que rechazamos la hipótesis nula de que los datos siguen una distribución normal. Es decir, que ninguno de los genes de nuestro set de trabajo sigue una distribución normal. Esto es más visible mediante las graficas (Histograma y Q-Q Plot).
 
 #### Exploración detallada de los datos
-
 
 Antes de empezar con la parte de análisis descriptiva estadística, vamos a explorar un poco más los datos para ver si encontramos patrones y outliers, lo que nos permitirá determinar posteriormente que pruebas estadísticas son las más adecuadas:
 
@@ -593,9 +593,17 @@ gene_data %>%
 ```
 
 #### Interpretación pruebas de hipótesis
+Con el test de Kruskal-Wallis encontramos significancia en los genes AQ_CHKA (0.0242), AQ_CXCR1 (0.0126) y AQ_MAPK1 (0.0381). Con el test de Wilcox encontramos significancia en el gen AQ_STAT3 (0.0131). Estos genes podrían tener una relación significativa con el tipo de tumor o el tratamiento, por lo que podrían ser relevantes para análisis posteriores o ser usados como biomarcadores potenciales.
 
 ### Interpretación de los resultados
-
+Se ha observado una mayor correlación entre los genes de los pacientes de mayor edad, por encima del P50, lo que podría indicar una correlación entre la edad y el estado de salud o biomarcadores asociados. 
+La hipertensión tiene una fuerte asociación con valores elevados en mujeres, lo que podría reflejar un mayor impacto de la presión arterial en ciertos marcadores clínicos o de laboratorio.
+El historial de tabaquismo no parece influir en los resultados de manera significativa.
+El aumento de glucosa en mujeres con valores elevados podría reflejar una tendencia hacia la resistencia a la insulina o una predisposición a disfunciones metabólicas.
+Edad y HTA son factores clave, especialmente en mujeres.
+Cardiopatía y diabetes muestran una tendencia a impactar más a los varones con valores elevados.
+Glucosa elevada podría ser un marcador importante en mujeres, justificando monitoreos más frecuentes.
+No se observan diferencias significativas en variables como tabaquismo, EPOC o biomarcadores hematológicos (leucocitos, neutrófilos).
 
 ### Exportación de los datos
 
@@ -621,7 +629,9 @@ print(doc, target = "Tablas_resultados.docx")
 
 ```
 
-### Implementación de un modelo de regresión logística
+
+
+## Implementación de un modelo de regresión logística
 
 
 
