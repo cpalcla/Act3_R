@@ -123,6 +123,11 @@ fviz_eig(pca_result, addlabels = TRUE, ylim = c(0, 60), main = "Varianza Acumula
 ```
 En el *scree plot* se pueden ver en el eje horizontal las dimensiones o componentes principales y en el eje vertical el porcentaje de la varianza total explicada por cada componente. Como se ha comentado antes, la primera dimensión explica el 52.5% de la varianza total, lo que indica que captura la mayor parte de la información. A partir de la primera dimensión, la varianza explicada por las siguientes disminuye significativamente, oscilando entre 6.3% y 2%.
 
+Accediendo al objeto rotation del PCA se puede visualizar la carga de cada variable en los componentes.
+```{r}
+view(pca_result$rotation)
+```
+
 Utilizando la función get_pca_var() de la librería factoextra, se obtiene diferente información del PCA. El objeto "coord" muestra las coordendas en el eje X e Y de las diferentes variables para construir un grafico de dispersión. En "cor" aparecen las correlaciones entre las variables y las dimensiones y en "cos2" la calidad de la variable.
 ```{r}
 var<- get_pca_var(pca_result)
