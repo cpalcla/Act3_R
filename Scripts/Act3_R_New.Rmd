@@ -668,14 +668,32 @@ dataset$PC2_tercil <- cut(pca_data$PC2,
 modelo_logistica <- glm(metastasis ~ PC1_tercil + PC2_tercil, 
                         data = dataset, family = "binomial")
 
-
 summary(modelo_logistica)    
 
-confint(modelo_logistica) # intervalo de confianza
+# Extraer los coeficientes y calcular OR
+coeficientes <- exp(modelo_logistica$coefficients)
 
-exp(modelo_logistica$coefficients) # las OR
-exp(coef(modelo_logistica)) # las OR
-exp(confint(modelo_logistica)) # intervalo de confianza de las OR
+# Extraer intervalos de confianza de las OR
+ic_OR <- exp(confint(modelo_logistica))
+
+# Extraer los valores p
+p_values <- summary(modelo_logistica)$coefficients[, 4]
+
+# Crear la tabla de resultados
+tabla_resultados <- data.frame(
+  Variables = c("Intercepto", "PC1_tercilMedio", "PC1_tercilAlto", "PC2_tercilMedio", "PC2_tercilAlto"),
+  OR = c(1, coeficientes[2], coeficientes[3], coeficientes[4], coeficientes[5]),
+  IC_inf = c(NA, ic_OR[2, 1], ic_OR[3, 1], ic_OR[4, 1], ic_OR[5, 1]),
+  IC_sup = c(NA, ic_OR[2, 2], ic_OR[3, 2], ic_OR[4, 2], ic_OR[5, 2]),
+  P_value = c(NA, p_values[2], p_values[3], p_values[4], p_values[5])
+)
+
+# Formatear la tabla
+tabla_resultados$IC <- paste0("(", round(tabla_resultados$IC_inf, 2), " a ", round(tabla_resultados$IC_sup, 2), ")")
+tabla_resultados <- tabla_resultados[, c("Variables", "OR", "IC", "P_value")]
+
+# Mostrar la tabla
+print(tabla_resultados)
 
 ```
 
@@ -693,11 +711,36 @@ modelo_logistica <- glm(metastasis ~ PC1_tercil + PC2_tercil + sexo + exfumador 
 
 summary(modelo_logistica)    
 
-confint(modelo_logistica) # intervalo de confianza
+# Extraer los coeficientes y calcular OR
+coeficientes <- exp(modelo_logistica$coefficients)
 
-exp(modelo_logistica$coefficients) # las OR
-exp(coef(modelo_logistica)) # las OR
-exp(confint(modelo_logistica)) # intervalo de confianza de las OR
+# Extraer intervalos de confianza de las OR
+ic_OR <- exp(confint(modelo_logistica))
+
+# Extraer los valores p
+p_values <- summary(modelo_logistica)$coefficients[, 4]
+
+# Crear la tabla de resultados
+tabla_resultados <- data.frame(
+  Variables = c("Intercepto", "PC1_tercilMedio", "PC1_tercilAlto", "PC2_tercilMedio", 
+                "PC2_tercilAlto", "sexoVarón", "exfumadorSí", "score_dieta"),
+  OR = c(1, coeficientes[2], coeficientes[3], coeficientes[4], coeficientes[5], 
+         coeficientes[6], coeficientes[7], coeficientes[8]),
+  IC_inf = c(NA, ic_OR[2, 1], ic_OR[3, 1], ic_OR[4, 1], ic_OR[5, 1], 
+             ic_OR[6, 1], ic_OR[7, 1], ic_OR[8, 1]),
+  IC_sup = c(NA, ic_OR[2, 2], ic_OR[3, 2], ic_OR[4, 2], ic_OR[5, 2], 
+             ic_OR[6, 2], ic_OR[7, 2], ic_OR[8, 2]),
+  P_value = c(NA, p_values[2], p_values[3], p_values[4], p_values[5], 
+              p_values[6], p_values[7], p_values[8])
+)
+
+# Formatear la tabla
+tabla_resultados$IC <- paste0("(", round(tabla_resultados$IC_inf, 2), " a ", 
+                              round(tabla_resultados$IC_sup, 2), ")")
+tabla_resultados <- tabla_resultados[, c("Variables", "OR", "IC", "P_value")]
+
+# Mostrar la tabla
+print(tabla_resultados)
 
 ```
 Ninguno de los predictores incluidos en el modelo parece ser estadísticamente significativo (todos tienen p-valores altos), lo que sugiere que ninguno de estos factores tiene un impacto claro sobre la variable dependiente metastasis en este análisis. Además, el ajuste del modelo no mejora mucho respecto al modelo nulo, como lo indica la desviación residual y el AIC.
@@ -715,11 +758,37 @@ modelo_logistica <- glm(metastasis ~ PC1_tercil + PC2_tercil + sexo + leucocitos
 
 summary(modelo_logistica)    
 
-confint(modelo_logistica) # intervalo de confianza
+# Extraer los coeficientes y calcular OR
+coeficientes <- exp(modelo_logistica$coefficients)
 
-exp(modelo_logistica$coefficients) # las OR
-exp(coef(modelo_logistica)) # las OR
-exp(confint(modelo_logistica)) # intervalo de confianza de las OR
+# Extraer intervalos de confianza de las OR
+ic_OR <- exp(confint(modelo_logistica))
+
+# Extraer los valores p
+p_values <- summary(modelo_logistica)$coefficients[, 4]
+
+# Crear la tabla de resultados
+tabla_resultados <- data.frame(
+  Variables = c("Intercepto", "PC1_tercilMedio", "PC1_tercilAlto", "PC2_tercilMedio", 
+                "PC2_tercilAlto", "sexoVarón", "leucocitos", "glucosa"),
+  OR = c(1, coeficientes[2], coeficientes[3], coeficientes[4], coeficientes[5], 
+         coeficientes[6], coeficientes[7], coeficientes[8]),
+  IC_inf = c(NA, ic_OR[2, 1], ic_OR[3, 1], ic_OR[4, 1], ic_OR[5, 1], 
+             ic_OR[6, 1], ic_OR[7, 1], ic_OR[8, 1]),
+  IC_sup = c(NA, ic_OR[2, 2], ic_OR[3, 2], ic_OR[4, 2], ic_OR[5, 2], 
+             ic_OR[6, 2], ic_OR[7, 2], ic_OR[8, 2]),
+  P_value = c(NA, p_values[2], p_values[3], p_values[4], p_values[5], 
+              p_values[6], p_values[7], p_values[8])
+)
+
+# Formatear la tabla
+tabla_resultados$IC <- paste0("(", round(tabla_resultados$IC_inf, 2), " a ", 
+                              round(tabla_resultados$IC_sup, 2), ")")
+tabla_resultados <- tabla_resultados[, c("Variables", "OR", "IC", "P_value")]
+
+# Mostrar la tabla
+print(tabla_resultados)
+
                            
 ```
 
