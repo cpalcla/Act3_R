@@ -745,14 +745,13 @@ print(tabla_resultados)
 ```
 Ninguno de los predictores incluidos en el modelo parece ser estadísticamente significativo (todos tienen p-valores altos), lo que sugiere que ninguno de estos factores tiene un impacto claro sobre la variable dependiente metastasis en este análisis. Además, el ajuste del modelo no mejora mucho respecto al modelo nulo, como lo indica la desviación residual y el AIC.
 
-
-A continuación añadimos las variables predictoras de PC1_tercil, PC2_tercil,sexo, leucocitos y glucosa.
+A continuación añadimos las variables predictoras de PC1_tercil, PC2_tercil y los leucocitos.
 
 ```{r modelo regresion logistica multi2, echo=FALSE}
 
 #### ---- Variables: sexo, exfumador, score_dieta ---- ####
 
-modelo_logistica <- glm(metastasis ~ PC1_tercil + PC2_tercil + sexo + leucocitos + glucosa, 
+modelo_logistica <- glm(metastasis ~ PC1_tercil + PC2_tercil + leucocitos, 
                         data = dataset, family = "binomial")
 
 
@@ -770,16 +769,19 @@ p_values <- summary(modelo_logistica)$coefficients[, 4]
 # Crear la tabla de resultados
 tabla_resultados <- data.frame(
   Variables = c("Intercepto", "PC1_tercilMedio", "PC1_tercilAlto", "PC2_tercilMedio", 
-                "PC2_tercilAlto", "sexoVarón", "leucocitos", "glucosa"),
+                "PC2_tercilAlto", "leucocitos"),
   OR = c(1, coeficientes[2], coeficientes[3], coeficientes[4], coeficientes[5], 
-         coeficientes[6], coeficientes[7], coeficientes[8]),
+         coeficientes[6]),
   IC_inf = c(NA, ic_OR[2, 1], ic_OR[3, 1], ic_OR[4, 1], ic_OR[5, 1], 
-             ic_OR[6, 1], ic_OR[7, 1], ic_OR[8, 1]),
+             ic_OR[6, 1]),
   IC_sup = c(NA, ic_OR[2, 2], ic_OR[3, 2], ic_OR[4, 2], ic_OR[5, 2], 
-             ic_OR[6, 2], ic_OR[7, 2], ic_OR[8, 2]),
+             ic_OR[6, 2]),
   P_value = c(NA, p_values[2], p_values[3], p_values[4], p_values[5], 
-              p_values[6], p_values[7], p_values[8])
+              p_values[6])
 )
+
+# Ver la tabla
+print(tabla_resultados)
 
 # Formatear la tabla
 tabla_resultados$IC <- paste0("(", round(tabla_resultados$IC_inf, 2), " a ", 
@@ -791,7 +793,7 @@ print(tabla_resultados)
 
                            
 ```
-
+Ninguno de los predictores incluidos en el modelo parece ser estadísticamente significativo (todos tienen p-valores altos), lo que sugiere que ninguno de estos factores tiene un impacto claro sobre la variable dependiente metastasis en este análisis. Además, el ajuste del modelo no mejora mucho respecto al modelo nulo, como lo indica la desviación residual y el AIC.
 
 \`\`\`  
 
