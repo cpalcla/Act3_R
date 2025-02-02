@@ -110,7 +110,6 @@ a. Valores nulos: No se observan valores ausentes significativos.
 b. Estadísticas descriptivas: Los datos de genes están en un rango muy bajo (e.g., 10^-6 a 10^-3), indicando normalización o preprocesamiento previo.
 
 
-
 ### Análisis de Componentes Principales (PCA)
 
 Para realizar el Análisis de Componentes Principales (PCA), usaremos la matriz de expresión génica normalizada para su cálculo. Deberemos seleccionar los componentes principales que expliquen al menos el 70% de la varianza, por lo que se debe determinar cuantos componentes son necesarios. 
@@ -194,7 +193,6 @@ ggplot(pca_data, aes(PC1, PC2)) +
 
 
 ```
-
 
 ### Descriptiva de los componentes principales
 
@@ -397,8 +395,6 @@ combined_plot <- plot_AQ_ALOX5 + plot_AQ_CD274 + plot_AQ_CHKA + plot_AQ_CSF2 +
 
 combined_plot
 ```
-
-Lidia 
 # Tablas descriptivas 
 
 ## Análisis estadístico
@@ -630,12 +626,76 @@ print(doc, target = "Tablas_resultados.docx")
 ```
 
 
-
 ## Implementación de un modelo de regresión logística
 
 
+```{r modelo regresion logistica}
+
+# Seleccionamos solo las columnas numéricas
+columnas_numericas <- dataset[, sapply(dataset, is.numeric)]
+
+# Calculamos la matriz de correlaciones
+correlaciones <- cor(columnas_numericas)
+print(correlaciones)
+
+table(dataset$extension)
+
+# Crear la variable binaria para metástasis
+dataset$metastasis <- ifelse(dataset$extension == "metastasico", "sí", "no")
+dataset$metastasis <- as.factor(dataset$metastasis)  # Convertir a factor
+
+table(dataset$metastasis)
+
+dataset$sexo <- as.factor(dataset$sexo)        
+dataset$exfumador <- as.factor(dataset$exfumador)                 
+
+# Crear terciles de los componentes principales
+dataset$PC1_tercil <- cut(pca_data$PC1, 
+                           breaks = quantile(pca_data$PC1, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+                           include.lowest = TRUE, labels = c("Bajo", "Medio", "Alto"))
+
+dataset$PC2_tercil <- cut(pca_data$PC2, 
+                           breaks = quantile(pca_data$PC2, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+                           include.lowest = TRUE, labels = c("Bajo", "Medio", "Alto"))
+
+modelo_logistica <- glm(metastasis ~ PC1_tercil + PC2_tercil, 
+                        data = dataset, family = "binomial")
+
+summary(modelo_logistica)    
+confint(modelo_logistica) # intervalo de confianza
+
+exp(modelo_logistica$coefficients) # las OR
+exp(coef(modelo_logistica)) # las OR
+exp(confint(modelo_logistica)) # intervalo de confianza de las OR
 
 
+#### ---- Regresión Logística Multinomial ---- ####
+
+library(nnet)
+modelo_multinomial <- multinom(metastasis ~ PC1_tercil + PC2_tercil + sexo + exfumador + score_dieta , data=dataset)
+summary(modelo_multinomial) # calculo de los valores p mediante una formula: https://stats.oarc.ucla.edu/r/dae/multinomial-logistic-regression/ 
+confint(modelo_multinomial)
+
+table(dataset$metastasis)
+exp(coef(modelo_multinomial))
+exp(confint(modelo_multinomial))
+
+#### ---- Regresión Logística Multinomial ---- ####
+
+modelo_multinomial <- multinom(metastasis ~ PC1_tercil + PC2_tercil + sexo + leucocitos+ glucosa, data=dataset)
+summary(modelo_multinomial) # calculo de los valores p mediante una formula: https://stats.oarc.ucla.edu/r/dae/multinomial-logistic-regression/ 
+confint(modelo_multinomial)
+
+table(dataset$metastasis)
+exp(coef(modelo_multinomial))
+exp(confint(modelo_multinomial))
+
+                           
+```
+Un odds ratio de 1 indica que no hay diferencia en las probabilidades (es decir, la variable no tiene un efecto sobre la probabilidad del resultado).
+Si el intervalo de confianza incluye 1, entonces existe la posibilidad de que el verdadero valor del coeficiente sea 1, lo que implicaría que la variable en cuestión no tiene un efecto significativo sobre la variable dependiente.
+
+Dado que todos los intervalos de confianza incluyen el valor 1, esto indica que ninguna de las variables predictoras tiene un efecto estadísticamente significativo en la variable dependiente. En otras palabras, no podemos concluir que estas variables estén asociadas de manera significativa con el resultado, ya que la posibilidad de que el verdadero valor de cada coeficiente sea 1 (lo que implica no tener efecto) es plausible.
 
 
 
