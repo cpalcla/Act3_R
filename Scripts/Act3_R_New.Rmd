@@ -42,7 +42,10 @@ En primer lugar, se cargan las librerías necesarias para realizar la actividad 
 knitr::opts_chunk$set(echo = TRUE)
 
 #wd_Carmen:
-setwd("/Users/carme/OneDrive/Escritorio/R/Master_bioinformatica/Estadistica_R/actividades/Act3_R")
+# setwd("/Users/carme/OneDrive/Escritorio/R/Master_bioinformatica/Estadistica_R/actividades/Act3_R")
+
+#wd Alba
+setwd("/home/albagmoya/Escriptori/Estadistica/Act3_R")
 
 #Cargar librerías
 library(ggplot2)
@@ -56,7 +59,7 @@ library(officer)
 library(pheatmap)
 
 #Cargar base de datos
-dataset <- read.csv("Datos/Dataset expresión genes.csv")
+dataset <- read.csv("/home/albagmoya/Escriptori/Estadistica/Act3_R/Datos/Dataset expresión genes.csv")
 
 ```
 
@@ -72,7 +75,7 @@ Las variables descriptivas del conjunto de datos contiene variables categoricas,
 # Preprocesamiento de los datos
 
 Se realiza el preprocesamiento de los datos que incluye, entre otros, la verificación de valores nulos y el escalado de las variables de expresión génica.
-```{r preprocesamiento_datos}
+```{r preprocesamiento_datos, echo=FALSE}
 # Verificar valores nulos
 sum(is.na(dataset)) # Total de valores nulos
 colSums(is.na(dataset)) # Valores nulos por columna
@@ -105,7 +108,7 @@ b. Estadísticas descriptivas: Los datos de genes están en un rango muy bajo (e
 Para realizar el Análisis de Componentes Principales (PCA), se usará la matriz de expresión génica normalizada para su cálculo. Hay que seleccionar los componentes principales que expliquen al menos el 70% de la varianza, por lo que se debe determinar cuantos componentes son necesarios. 
 
 Se realiza el PCA utilizando la función prcomp() de la librería factoextra utilizando las variables de expresión de los genes. Después, se obtiene los *eigenvalues* del PCA mediante la función get_eigenvalue() de la librería factoextra.
-```{r}
+```{r, echo=FALSE}
 # Calcular el PCA
 pca_result <- prcomp(datos_genes_scaled, center = TRUE, scale. = TRUE)
 
@@ -117,26 +120,26 @@ En la primera columna de esta tabla se pueden ver los *eigenvalue*, que es el va
 Como se puede ver, hay 46 dimensiones. La primera dimensión explica el 52,5% de la varianza y la segunda un 6,5%. Para explicar al menos el 70% de la varianza se tendrían que seleccionar las **5 primeras dimensiones** que explicarían el **72,3%** de la varianza.
 
 Esto también se puede visualizar en forma de gráfico (*screeplot*) utilizando la función fviz_eig() de la librería factoextra. Se establece el límite superior del eje Y en 60 ya que la dimensión 1 explica más del 50% de la varianza.
-```{r}
+```{r, echo=FALSE}
 # Scree plot: varianza explicada por componente
 fviz_eig(pca_result, addlabels = TRUE, ylim = c(0, 60), main = "Varianza Acumulada Explicada", ylab = "Varianza Acumulada Explicada (%) del PCA", xlab = "Dimensiones")
 ```
 En el *scree plot* se pueden ver en el eje horizontal las dimensiones o componentes principales y en el eje vertical el porcentaje de la varianza total explicada por cada componente. Como se ha comentado antes, la primera dimensión explica el 52.5% de la varianza total, lo que indica que captura la mayor parte de la información. A partir de la primera dimensión, la varianza explicada por las siguientes disminuye significativamente, oscilando entre 6.3% y 2%.
 
 Accediendo al objeto rotation del PCA se puede visualizar la carga de cada variable en los componentes.
-```{r}
+```{r, echo=FALSE}
 view(pca_result$rotation)
 ```
 
 Utilizando la función get_pca_var() de la librería factoextra, se obtiene diferente información del PCA. El objeto "coord" muestra las coordendas en el eje X e Y de las diferentes variables para construir un grafico de dispersión. En "cor" aparecen las correlaciones entre las variables y las dimensiones y en "cos2" la calidad de la variable.
-```{r}
+```{r, echo=FALSE}}
 var<- get_pca_var(pca_result)
 var$contrib
 ```
 El objeto "contrib" contiene las contribuciones de las variables a las distintas dimensiones en forma de porcentaje, reflejando la importancia relativa de cada variable en la construcción de una dimensión. En este caso, para dimensión 1, las variables AQ_CCL5 (3.39%) y AQ_FASN (3.18%) tienen una mayor contribución relativa y para dimensión 3, AQ_CHKA tiene una contribución muy alta (7.80%), lo que sugiere que esta dimensión captura características asociadas con esta variable.
 
 Mediante la función fviz_pca_var() de la librería factoextra se representan las varibales en un plano donde el eje X es la dimensión 1 y el eje Y la dimensión 2.
-```{r}
+```{r, echo=FALSE}
 fviz_pca_var(pca_result,
              col.var = "black",
              repel = TRUE,
@@ -147,7 +150,7 @@ fviz_pca_var(pca_result,
 La mayoría de las variables se asocian negativamente con la dimensión 1. En el caso de la dimensión 2 hay variables que se asocian tanto positivamente como negativamente. Las variables ADIPOQ y NOX5 se asocían positivamnete tanto con la dimensión 1 como con la 2. La longitud de la flecha indica el grado de asociación de las varibles con la dimensión, por lo que todas las variables excepto ADIPOQ y NOX5, por su longitud más corta, tienen una una gran asociación con las dimensiones. También se puede observar como muchas de las variables están en la misma dirección y muy cerca entre sí, por lo que estárán correlacionadas positivamente entre sí.
 
 En este caso se colorean las variables en función del objeto "cos2" que indica la calidad o importancia de la representación de cada variable en el espacio de las componentes principales.
-```{r}
+```{r, echo=FALSE}
 fviz_pca_var(pca_result, 
              col.var = "cos2", # Colorear según la contribución al PCA
              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), # Gradiente de colores
@@ -159,7 +162,7 @@ fviz_pca_var(pca_result,
 En este gráfico, los valores cercanos a 1 indican que la variable está bien representada en este espacio, mientras que los valores más bajos sugieren que la variable tiene una menor representación en estas dimensiones. Así, las únicas variables que tienen una menor representación son ADIPOQ y NOX. De esta forma, los genes que tienen mayor representación serán importantes para el análisis posterior.
 
 A continuación se visualiza la representación de la contribución global de cada variable a las dimensiones 1 a 5 mediante la función fviz_cos2 de la librería factoextra.
-```{r}
+```{r, echo=FALSE}
 fviz_cos2(pca_result,
           choice = "var", 
           axes = 1:5, # DUDA IMPORTANTE. HAY QUE PONER DE 1 A 5 PORQUE HEMOS SELECCIONADO LOS 5 PRIMEROS? CAMBIA MUCHO SI SE SELECCIONA 1:2?
@@ -170,7 +173,7 @@ fviz_cos2(pca_result,
 Un valor de cos2 alto indica una buena representación de la variable en el componente principal, mientras que un valor bajo significa que la variable no está perfectamente representada. Como se puede ver en la gráfica, las variables con mejor representación son JAK1, NOX5 y ADIPOQ.
 
 Si se realiza un gráfico para ver como contribuyen los pacientes a las dimensiones 1 y 2 mediante la función fviz_pcs_ind() de la librería factoextra.
-```{r}
+```{r, echo=FALSE}
 fviz_pca_ind(
   pca_result,
   col.ind = "cos2",
@@ -182,7 +185,7 @@ Los pacientes representados con color rojo (como el 1, 2, 60 y 28) tienen una co
 
 
 Se grafica la proyección de individuos y variables mediante la función fviz_pca_biplot() de la librería factoextra.
-```{r}
+```{r, echo=FALSE}
 fviz_pca_biplot(pca_result,
                 col.ind = "blue",
                 col.var = "red",
@@ -209,10 +212,6 @@ Existe una superposición significativa entre los tratamientos tratA y tratB, lo
 En clonclusión, aunque Dim1 y Dim2 explican una cantidad significativa de la varianza, no separan completamente las muestras por tratamiento. Esto podría requerir explorar dimensiones adicionales o realizar análisis complementarios.
 
 # Descriptiva de los componentes principales
-
-
-
-
 
 
 ```{r descripcion, echo=FALSE}
@@ -386,7 +385,7 @@ plot_AQ_TNF
 ```
 
 Combinar los gráficos en un solo layout con 3 columnas con Patchwork
-```{r}
+```{r, echo=FALSE}
 combined_plot <- plot_AQ_ALOX5 + plot_AQ_CD274 + plot_AQ_CHKA + plot_AQ_CSF2 +
   plot_AQ_FOXO3 + plot_AQ_IL6 + plot_AQ_LDHA + plot_AQ_LIF +
   plot_AQ_MAPK1 + plot_AQ_NOS2 + plot_AQ_IFNG + plot_AQ_PDCD1 +
@@ -403,7 +402,7 @@ combined_plot
 ### Estudio de la normalidad
 
 Vamos a estudiar la distribución de los datos de trabajo, de esta forma estamos estudiando y comprobando la normalidad de los datos con los que debemos trabajar. Escogemos el test de Shapiro-Wilk ya que tenemos una muestra de N=65, y aunque excede un poco el rango óptimo de N>50 de este test, su sensibilidad sigue siendo adecuada para este grupo muestral. Las ventajas de este test es que es potente para este rango muestral, ya que es sensible a pequeñas desviaciones de normalidad. 
-```{r distribución}
+```{r distribución, echo=FALSE}
 
 # Seleccionar las columnas de genes
 genes <- dataset %>% select(starts_with("AQ_"))
@@ -461,7 +460,7 @@ El Heatmap nos permite ver los patrones de expresión entre los pacientes y los 
 
 La matriz de correlación evalua las relaciones entre los genes. Si encontramos genes con alta correlación podrian estar coexpresados, o formar parte de los mismos procesos biológicos. En este caso usamos Spearman, ya que los datos no tienen una distribución normal. 
 
-```{r exploración_datos}
+```{r exploración_datos, echo=FALSE}
 
 # Boxplots para genes seleccionados
 dataset %>%
@@ -490,7 +489,7 @@ apply(dataset[,59:104], 2, outliers)
 Como los datos no siguen una distribución normal, vamos a calcular la mediana y el rango interquartílico (p-25 p-75), en lugar de la mediana y la desviación estándar. 
 
 
-```{r descriptiva estadística}
+```{r descriptiva estadística, echo=FALSE}
 
 ## Estadísticas descriptivas por tratamiento y tipo de tumor
 
@@ -546,8 +545,6 @@ dataset %>%
   labs(title = "Expresión Génica por Edad y Sexo")
 
 
-
-
 ```
 
 En los resultados se observa que:
@@ -560,7 +557,7 @@ Aunque algunas condiciones clínicas no parecen diferir según el tratamiento/tu
 ### Pruebas de hipótesis
 Los test a aplicar deben ser para datos no paramétricos. Por este motivo, vamos a realizar la prueba de Kruskal-Wallis para comparar más de 2 grupos, es decir, observar si hay o no diferencias significativas entre tratamientos y/o tipos de tumor. También usaremos la prueba de Mann-Whitney, para comparar dos grupos, es decir el grupo de pacientes jovenes vs el de persones mayores por ejemplo. 
 
-```{r pruebas de hipótesis}
+```{r pruebas de hipótesis, echo=FALSE}
 # Kruskal-Wallis
 p_values_kruskal <- apply(dataset[,59:104], 2, function(gen) {
   kruskal.test(gen ~ trat, data = dataset)$p.value
@@ -589,7 +586,6 @@ dataset %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title = "Expresión Génica por Tratamiento y Tumor")
 ```
-
 Con el test de Kruskal-Wallis encontramos significancia en los genes AQ_CHKA (0.0242), AQ_CXCR1 (0.0126) y AQ_MAPK1 (0.0381). Con el test de Wilcox encontramos significancia en el gen AQ_STAT3 (0.0131). Estos genes podrían tener una relación significativa con el tipo de tumor o el tratamiento, por lo que podrían ser relevantes para análisis posteriores o ser usados como biomarcadores potenciales.
 
 ### Interpretación de los resultados
@@ -605,7 +601,7 @@ No se observan diferencias significativas en variables como tabaquismo, EPOC o b
 
 ### Exportación de los datos
 
-```{r exportar datos tabla word}
+```{r exportar datos tabla word, echo=FALSE}
 
 # Crear documento de Word
 doc <- read_docx()
@@ -629,7 +625,11 @@ print(doc, target = "Tablas_resultados.docx")
 
 ### Implementación de un modelo de regresión logística
 
-```{r modelo regresion logistica}
+La regresión logística es una técnica estadística utilizada para modelar la relación entre una variable dependiente y un conjunto de variables independientes. En este caso, vamos a implementar un modelo de regresión logística para predecir la presencia de metástasis en función de varias variables, como los componentes principales derivados de un análisis de componentes principales (PCA), el sexo, el hábito de fumar y otros factores clínicos.
+
+A continuación visualizamos la matriz de correlaciones, que nos indica cómo varían las variables en relación entre sí (si una sube, cómo varía la otra). Esto es útil para detectar posibles problemas de multicolinealidad y seleccionar variables relevantes, lo cual es importante para mejorar la precisión y estabilidad del modelo.
+
+```{r preparacion datos modelo, echo=FALSE}
 
 # Seleccionamos solo las columnas numéricas
 columnas_numericas <- dataset[, sapply(dataset, is.numeric)]
@@ -638,7 +638,13 @@ columnas_numericas <- dataset[, sapply(dataset, is.numeric)]
 correlaciones <- cor(columnas_numericas)
 print(correlaciones)
 
+#Frequencias
 table(dataset$extension)
+```
+
+A continuación el modelo está prediciendo metastasis utilizando los predictores PC1_tercil y PC2_tercil.
+
+```{r modelo regresion logistica, echo=FALSE}
 
 # Crear la variable binaria para metástasis
 dataset$metastasis <- ifelse(dataset$extension == "metastasico", "sí", "no")
@@ -647,7 +653,8 @@ dataset$metastasis <- as.factor(dataset$metastasis)  # Convertir a factor
 table(dataset$metastasis)
 
 dataset$sexo <- as.factor(dataset$sexo)        
-dataset$exfumador <- as.factor(dataset$exfumador)                 
+dataset$exfumador <- as.factor(dataset$exfumador)
+
 
 # Crear terciles de los componentes principales
 dataset$PC1_tercil <- cut(pca_data$PC1, 
@@ -661,41 +668,61 @@ dataset$PC2_tercil <- cut(pca_data$PC2,
 modelo_logistica <- glm(metastasis ~ PC1_tercil + PC2_tercil, 
                         data = dataset, family = "binomial")
 
+
 summary(modelo_logistica)    
+
 confint(modelo_logistica) # intervalo de confianza
 
 exp(modelo_logistica$coefficients) # las OR
 exp(coef(modelo_logistica)) # las OR
 exp(confint(modelo_logistica)) # intervalo de confianza de las OR
 
+```
 
-#### ---- Regresión Logística Multinomial ---- ####
+Ninguno de los predictores (PC1_tercil y PC2_tercil) parece tener un efecto significativo sobre las probabilidades de metastasis, según los valores p. Además, el ajuste del modelo no mejora significativamente respecto al modelo nulo, como indica la desviación residual. La marginal significancia del intercepto podría sugerir que las probabilidades base de la metástasis están influenciadas por factores no observados.
 
-library(nnet)
-modelo_multinomial <- multinom(metastasis ~ PC1_tercil + PC2_tercil + sexo + exfumador + score_dieta , data=dataset)
-summary(modelo_multinomial) # calculo de los valores p mediante una formula: https://stats.oarc.ucla.edu/r/dae/multinomial-logistic-regression/ 
-confint(modelo_multinomial)
+A continuación añadimos las variables predictoras PC1_tercil, PC2_tercil,sexo, exfumador y dieta. 
 
-table(dataset$metastasis)
-exp(coef(modelo_multinomial))
-exp(confint(modelo_multinomial))
+```{r modelo regresion logistica 2, echo=FALSE}
 
-#### ---- Regresión Logística Multinomial ---- ####
+#### ---- Variables: sexo, exfumador, score_dieta ---- ####
 
-modelo_multinomial <- multinom(metastasis ~ PC1_tercil + PC2_tercil + sexo + leucocitos+ glucosa, data=dataset)
-summary(modelo_multinomial) # calculo de los valores p mediante una formula: https://stats.oarc.ucla.edu/r/dae/multinomial-logistic-regression/ 
-confint(modelo_multinomial)
+modelo_logistica <- glm(metastasis ~ PC1_tercil + PC2_tercil + sexo + exfumador + score_dieta, 
+                        data = dataset, family = "binomial")
 
-table(dataset$metastasis)
-exp(coef(modelo_multinomial))
-exp(confint(modelo_multinomial))
 
+summary(modelo_logistica)    
+
+confint(modelo_logistica) # intervalo de confianza
+
+exp(modelo_logistica$coefficients) # las OR
+exp(coef(modelo_logistica)) # las OR
+exp(confint(modelo_logistica)) # intervalo de confianza de las OR
+
+```
+Ninguno de los predictores incluidos en el modelo parece ser estadísticamente significativo (todos tienen p-valores altos), lo que sugiere que ninguno de estos factores tiene un impacto claro sobre la variable dependiente metastasis en este análisis. Además, el ajuste del modelo no mejora mucho respecto al modelo nulo, como lo indica la desviación residual y el AIC.
+
+
+A continuación añadimos las variables predictoras de PC1_tercil, PC2_tercil,sexo, leucocitos y glucosa.
+
+```{r modelo regresion logistica multi2, echo=FALSE}
+
+#### ---- Variables: sexo, exfumador, score_dieta ---- ####
+
+modelo_logistica <- glm(metastasis ~ PC1_tercil + PC2_tercil + sexo + leucocitos + glucosa, 
+                        data = dataset, family = "binomial")
+
+
+summary(modelo_logistica)    
+
+confint(modelo_logistica) # intervalo de confianza
+
+exp(modelo_logistica$coefficients) # las OR
+exp(coef(modelo_logistica)) # las OR
+exp(confint(modelo_logistica)) # intervalo de confianza de las OR
                            
 ```
-Un odds ratio de 1 indica que no hay diferencia en las probabilidades (es decir, la variable no tiene un efecto sobre la probabilidad del resultado).
-Si el intervalo de confianza incluye 1, entonces existe la posibilidad de que el verdadero valor del coeficiente sea 1, lo que implicaría que la variable en cuestión no tiene un efecto significativo sobre la variable dependiente.
 
-Dado que todos los intervalos de confianza incluyen el valor 1, esto indica que ninguna de las variables predictoras tiene un efecto estadísticamente significativo en la variable dependiente. En otras palabras, no podemos concluir que estas variables estén asociadas de manera significativa con el resultado, ya que la posibilidad de que el verdadero valor de cada coeficiente sea 1 (lo que implica no tener efecto) es plausible.
 
 \`\`\`  
 
