@@ -1,5 +1,5 @@
 ---
-title: "#Actividad 3 Grupal R y Estadística para Ciencias de la Salud"
+title: "Actividad 3 Grupal R y Estadística para Ciencias de la Salud"
 author: "Alba García Moya, Laura Ruiz Ripa, Lidia Sánchez Camós y Carmen Palacios Clar"
 date: "02/02/2025"
 output:
@@ -38,7 +38,7 @@ Con esta actividad se busca aplicar todos los conceptos aprendidos hasta el mome
 5.	Modelo predictivo de regresión logística
 
 En primer lugar, se cargan las librerías necesarias para realizar la actividad y el conjunto de datos
-```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+```{r echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 knitr::opts_chunk$set(echo = TRUE)
 
 #wd_Carmen:
@@ -57,6 +57,7 @@ library(gt)
 library(factoextra)
 library(officer)
 library(pheatmap)
+library(flextable)
 
 #Cargar base de datos
 dataset <- read.csv("/home/albagmoya/Escriptori/Estadistica/Act3_R/Datos/Dataset expresión genes.csv")
@@ -64,7 +65,7 @@ dataset <- read.csv("/home/albagmoya/Escriptori/Estadistica/Act3_R/Datos/Dataset
 ```
 
 Se utilizan las funciones summary() y str() para hacer un resúmen inicial del conjunto de datos.
-```{r echo=TRUE, message=FALSE, warning=FALSE, results='hide'}
+```{r echo=FALSE, message=FALSE, warning=FALSE, results='hide'}
 # Resumen inicial de los datos
 summary(dataset)
 str(dataset)
@@ -75,7 +76,7 @@ Las variables descriptivas del conjunto de datos contiene variables categoricas,
 # Preprocesamiento de los datos
 
 Se realiza el preprocesamiento de los datos que incluye, entre otros, la verificación de valores nulos y el escalado de las variables de expresión génica.
-```{r preprocesamiento_datos, echo=FALSE}
+```{r preprocesamiento_datos, include=FALSE}
 # Verificar valores nulos
 sum(is.na(dataset)) # Total de valores nulos
 colSums(is.na(dataset)) # Valores nulos por columna
@@ -124,21 +125,26 @@ Esto también se puede visualizar en forma de gráfico (*screeplot*) utilizando 
 # Scree plot: varianza explicada por componente
 fviz_eig(pca_result, addlabels = TRUE, ylim = c(0, 60), main = "Varianza Acumulada Explicada", ylab = "Varianza Acumulada Explicada (%) del PCA", xlab = "Dimensiones")
 ```
+
 En el *scree plot* se pueden ver en el eje horizontal las dimensiones o componentes principales y en el eje vertical el porcentaje de la varianza total explicada por cada componente. Como se ha comentado antes, la primera dimensión explica el 52.5% de la varianza total, lo que indica que captura la mayor parte de la información. A partir de la primera dimensión, la varianza explicada por las siguientes disminuye significativamente, oscilando entre 6.3% y 2%.
 
 Accediendo al objeto rotation del PCA se puede visualizar la carga de cada variable en los componentes.
+
 ```{r, echo=FALSE}
 view(pca_result$rotation)
 ```
 
 Utilizando la función get_pca_var() de la librería factoextra, se obtiene diferente información del PCA. El objeto "coord" muestra las coordendas en el eje X e Y de las diferentes variables para construir un grafico de dispersión. En "cor" aparecen las correlaciones entre las variables y las dimensiones y en "cos2" la calidad de la variable.
+
 ```{r, echo=FALSE}
 var<- get_pca_var(pca_result)
 var$contrib
 ```
+
 El objeto "contrib" contiene las contribuciones de las variables a las distintas dimensiones en forma de porcentaje, reflejando la importancia relativa de cada variable en la construcción de una dimensión. En este caso, para dimensión 1, las variables AQ_CCL5 (3.39%) y AQ_FASN (3.18%) tienen una mayor contribución relativa y para dimensión 3, AQ_CHKA tiene una contribución muy alta (7.80%), lo que sugiere que esta dimensión captura características asociadas con esta variable.
 
 Mediante la función fviz_pca_var() de la librería factoextra se representan las varibales en un plano donde el eje X es la dimensión 1 y el eje Y la dimensión 2.
+
 ```{r, echo=FALSE}
 fviz_pca_var(pca_result,
              col.var = "black",
@@ -147,9 +153,11 @@ fviz_pca_var(pca_result,
 ) +
   ggtitle("Proyección de las Variables en el Espacio de las Componentes Principales")
 ```
+
 La mayoría de las variables se asocian negativamente con la dimensión 1. En el caso de la dimensión 2 hay variables que se asocian tanto positivamente como negativamente. Las variables ADIPOQ y NOX5 se asocían positivamnete tanto con la dimensión 1 como con la 2. La longitud de la flecha indica el grado de asociación de las varibles con la dimensión, por lo que todas las variables excepto ADIPOQ y NOX5, por su longitud más corta, tienen una una gran asociación con las dimensiones. También se puede observar como muchas de las variables están en la misma dirección y muy cerca entre sí, por lo que estárán correlacionadas positivamente entre sí.
 
 En este caso se colorean las variables en función del objeto "cos2" que indica la calidad o importancia de la representación de cada variable en el espacio de las componentes principales.
+
 ```{r, echo=FALSE}
 fviz_pca_var(pca_result, 
              col.var = "cos2", # Colorear según la contribución al PCA
@@ -158,10 +166,13 @@ fviz_pca_var(pca_result,
              labelsize = 2
 ) +
   ggtitle("Proyección de las Variables en el Espacio de las Componentes Principales según cos2")
+
 ```
+
 En este gráfico, los valores cercanos a 1 indican que la variable está bien representada en este espacio, mientras que los valores más bajos sugieren que la variable tiene una menor representación en estas dimensiones. Así, las únicas variables que tienen una menor representación son ADIPOQ y NOX. De esta forma, los genes que tienen mayor representación serán importantes para el análisis posterior.
 
 A continuación se visualiza la representación de la contribución global de cada variable a las dimensiones 1 a 5 mediante la función fviz_cos2 de la librería factoextra.
+
 ```{r, echo=FALSE}
 fviz_cos2(pca_result,
           choice = "var", 
@@ -169,10 +180,13 @@ fviz_cos2(pca_result,
           labelsize = 1) +
   ggtitle("Contribución de las Variables a las 5 Primeras Componentes Principales (cos²)") +
   labs(y = "cos² (Calidad de Representación)")
+
 ```
+
 Un valor de cos2 alto indica una buena representación de la variable en el componente principal, mientras que un valor bajo significa que la variable no está perfectamente representada. Como se puede ver en la gráfica, las variables con mejor representación son JAK1, NOX5 y ADIPOQ.
 
 Si se realiza un gráfico para ver como contribuyen los pacientes a las dimensiones 1 y 2 mediante la función fviz_pcs_ind() de la librería factoextra.
+
 ```{r, echo=FALSE}
 fviz_pca_ind(
   pca_result,
@@ -180,23 +194,29 @@ fviz_pca_ind(
   gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
   repel = TRUE) +
   ggtitle("Proyección de los individuos en el Espacio de las Componentes Principales según cos2")
+
 ```
 Los pacientes representados con color rojo (como el 1, 2, 60 y 28) tienen una contribución más alta a las dimensiones 1 y 2.
 
-
 Se grafica la proyección de individuos y variables mediante la función fviz_pca_biplot() de la librería factoextra.
+
 ```{r, echo=FALSE}
+
 fviz_pca_biplot(pca_result,
                 col.ind = "blue",
                 col.var = "red",
                 repel = TRUE,
                 labelsize = 4) + 
   ggtitle("Proyección de Individuos y Variables en el Espacio de las Componentes Principales según cos2")
+
 ```
+
 Los individuos y variables que se encuentran en el mismo cuadrante comparten la característica de tener valores altos o bajos para las dimensión 1 o 2.
 
 En el siguiente gráfico se muestra la proyección de las observaciones en función del tipo de tratamiento que están siguiendo.
+
 ```{r PCA_plot, echo=FALSE}
+
 pca_data <- as.data.frame(pca_result$x)
 ggplot(pca_data, aes(PC1, PC2)) +
   geom_point(aes(color = factor(dataset$trat))) +  
@@ -205,8 +225,8 @@ ggplot(pca_data, aes(PC1, PC2)) +
   ggtitle("Proyección de Individuos en el Espacio de las Componentes Principales según tratamiento") +
   theme_minimal()
 
-
 ```
+
 Existe una superposición significativa entre los tratamientos tratA y tratB, lo que sugiere que no están perfectamente separadas en las primeras dos dimensiones principales. Sin embargo, se pueden observar algunas muestras que se alejan de las demás, indicando posible variabilidad o patrones únicos.
 
 En clonclusión, aunque Dim1 y Dim2 explican una cantidad significativa de la varianza, no separan completamente las muestras por tratamiento. Esto podría requerir explorar dimensiones adicionales o realizar análisis complementarios.
@@ -217,7 +237,7 @@ En clonclusión, aunque Dim1 y Dim2 explican una cantidad significativa de la va
 ### Estudio de la normalidad
 
 Vamos a estudiar la distribución de los datos de trabajo, de esta forma estamos estudiando y comprobando la normalidad de los datos con los que debemos trabajar. Escogemos el test de Shapiro-Wilk ya que tenemos una muestra de N=65, y aunque excede un poco el rango óptimo de N>50 de este test, su sensibilidad sigue siendo adecuada para este grupo muestral. Las ventajas de este test es que es potente para este rango muestral, ya que es sensible a pequeñas desviaciones de normalidad. 
-```{r distribución, echo=FALSE}
+```{r distribución, echo=FALSE, warning=FALSE, message=FALSE}
 
 # Seleccionar las columnas de genes
 genes <- dataset %>% select(starts_with("AQ_"))
@@ -266,7 +286,6 @@ Podemos observar que todos los p-valores de todos los genes son extremadamente b
 
 ## Exploración detallada de los datos
 
-
 Antes de empezar con la parte de análisis descriptiva estadística, vamos a explorar un poco más los datos para ver si encontramos patrones y *outliers*, lo que nos permitirá determinar posteriormente que pruebas estadísticas son las más adecuadas:
 
 Los boxplots nos permitiran observar de forma gráfica los valores más extremos que pueden influenciar los análisis estadísticos. 
@@ -275,7 +294,7 @@ El Heatmap nos permite ver los patrones de expresión entre los pacientes y los 
 
 La matriz de correlación evalua las relaciones entre los genes. Si encontramos genes con alta correlación podrian estar coexpresados, o formar parte de los mismos procesos biológicos. En este caso usamos Spearman, ya que los datos no tienen una distribución normal. 
 
-```{r exploración_datos, echo=FALSE}
+```{r exploración_datos, echo=FALSE, warning=FALSE, message=FALSE}
 
 # Boxplots para genes seleccionados
 dataset %>%
@@ -304,7 +323,7 @@ apply(dataset[,59:104], 2, outliers)
 Como los datos no siguen una distribución normal, vamos a calcular la mediana y el rango interquartílico (p-25 p-75), en lugar de la mediana y la desviación estándar. 
 
 
-```{r descriptiva estadística, echo=FALSE}
+```{r descriptiva estadística, echo=FALSE, warning=FALSE, message=FALSE}
 
 ## Estadísticas descriptivas por tratamiento y tipo de tumor
 
@@ -372,7 +391,7 @@ Aunque algunas condiciones clínicas no parecen diferir según el tratamiento/tu
 ## Pruebas de hipótesis
 Los test a aplicar deben ser para datos no paramétricos. Por este motivo, vamos a realizar la prueba de Kruskal-Wallis para comparar más de 2 grupos, es decir, observar si hay o no diferencias significativas entre tratamientos y/o tipos de tumor. También usaremos la prueba de Mann-Whitney, para comparar dos grupos, es decir el grupo de pacientes jovenes vs el de persones mayores por ejemplo. 
 
-```{r pruebas de hipótesis, echo=FALSE}
+```{r pruebas de hipótesis, echo=FALSE, warning=FALSE, message=FALSE}
 # Kruskal-Wallis
 p_values_kruskal <- apply(dataset[,59:104], 2, function(gen) {
   kruskal.test(gen ~ trat, data = dataset)$p.value
@@ -414,8 +433,6 @@ Cardiopatía y diabetes muestran una tendencia a impactar más a los varones con
 Glucosa elevada podría ser un marcador importante en mujeres, justificando monitoreos más frecuentes.
 No se observan diferencias significativas en variables como tabaquismo, EPOC o biomarcadores hematológicos (leucocitos, neutrófilos).
 
-## Exportación de los datos
-
 ```{r exportar datos tabla word, echo=FALSE}
 
 # Crear documento de Word
@@ -438,13 +455,13 @@ print(doc, target = "Tablas_resultados.docx")
 
 ```
 
-## Implementación de un modelo de regresión logística
+# Implementación de un modelo de regresión logística
 
 La regresión logística es una técnica estadística utilizada para modelar la relación entre una variable dependiente y un conjunto de variables independientes. En este caso, vamos a implementar un modelo de regresión logística para predecir la presencia de metástasis en función de varias variables, como los componentes principales derivados de un análisis de componentes principales (PCA), el sexo, el hábito de fumar y otros factores clínicos.
 
-A continuación visualizamos la matriz de correlaciones, que nos indica cómo varían las variables en relación entre sí (si una sube, cómo varía la otra). Esto es útil para detectar posibles problemas de multicolinealidad y seleccionar variables relevantes, lo cual es importante para mejorar la precisión y estabilidad del modelo.
+Primero observaremos la matriz de correlaciones, que nos indica cómo varían las variables en relación entre sí (si una sube, cómo varía la otra). Esto es útil para detectar posibles problemas de multicolinealidad y seleccionar variables relevantes, lo cual es importante para mejorar la precisión y estabilidad del modelo.
 
-```{r preparacion datos modelo, echo=FALSE}
+```{r preparacion datos modelo, include=FALSE}
 
 # Seleccionamos solo las columnas numéricas
 columnas_numericas <- dataset[, sapply(dataset, is.numeric)]
@@ -455,17 +472,18 @@ print(correlaciones)
 
 #Frequencias
 table(dataset$extension)
-```
-
-A continuación el modelo está prediciendo metastasis utilizando los predictores PC1_tercil y PC2_tercil.
-
-```{r modelo regresion logistica, echo=FALSE}
 
 # Crear la variable binaria para metástasis
 dataset$metastasis <- ifelse(dataset$extension == "metastasico", "sí", "no")
 dataset$metastasis <- as.factor(dataset$metastasis)  # Convertir a factor
 
 table(dataset$metastasis)
+
+```
+
+A continuación el modelo está prediciendo metastasis utilizando los predictores PC1_tercil y PC2_tercil.
+
+```{r modelo regresion logistica, echo=FALSE}
 
 dataset$sexo <- as.factor(dataset$sexo)        
 dataset$exfumador <- as.factor(dataset$exfumador)
@@ -505,10 +523,10 @@ tabla_resultados <- data.frame(
 
 # Formatear la tabla
 tabla_resultados$IC <- paste0("(", round(tabla_resultados$IC_inf, 2), " a ", round(tabla_resultados$IC_sup, 2), ")")
-tabla_resultados <- tabla_resultados[, c("Variables", "OR", "IC", "P_value")]
+tabla_resultados1 <- tabla_resultados[, c("Variables", "OR", "IC", "P_value")]
 
 # Mostrar la tabla
-print(tabla_resultados)
+print(tabla_resultados1)
 
 ```
 
@@ -552,10 +570,10 @@ tabla_resultados <- data.frame(
 # Formatear la tabla
 tabla_resultados$IC <- paste0("(", round(tabla_resultados$IC_inf, 2), " a ", 
                               round(tabla_resultados$IC_sup, 2), ")")
-tabla_resultados <- tabla_resultados[, c("Variables", "OR", "IC", "P_value")]
+tabla_resultados2 <- tabla_resultados[, c("Variables", "OR", "IC", "P_value")]
 
 # Mostrar la tabla
-print(tabla_resultados)
+print(tabla_resultados2)
 
 ```
 Ninguno de los predictores incluidos en el modelo parece ser estadísticamente significativo (todos tienen p-valores altos), lo que sugiere que ninguno de estos factores tiene un impacto claro sobre la variable dependiente metastasis en este análisis. Además, el ajuste del modelo no mejora mucho respecto al modelo nulo, como lo indica la desviación residual y el AIC.
@@ -601,14 +619,37 @@ print(tabla_resultados)
 # Formatear la tabla
 tabla_resultados$IC <- paste0("(", round(tabla_resultados$IC_inf, 2), " a ", 
                               round(tabla_resultados$IC_sup, 2), ")")
-tabla_resultados <- tabla_resultados[, c("Variables", "OR", "IC", "P_value")]
+tabla_resultados3 <- tabla_resultados[, c("Variables", "OR", "IC", "P_value")]
 
 # Mostrar la tabla
-print(tabla_resultados)
+print(tabla_resultados3)
 
-                           
 ```
 Ninguno de los predictores incluidos en el modelo parece ser estadísticamente significativo (todos tienen p-valores altos), lo que sugiere que ninguno de estos factores tiene un impacto claro sobre la variable dependiente metastasis en este análisis. Además, el ajuste del modelo no mejora mucho respecto al modelo nulo, como lo indica la desviación residual y el AIC.
+
+```{r exportar datos modelo, echo=FALSE}
+
+tabla_flex1 <- flextable(tabla_resultados1)
+tabla_flex2 <- flextable(tabla_resultados2)
+tabla_flex3 <- flextable(tabla_resultados3)
+
+# Crear un nuevo documento Word
+doc <- read_docx() %>%
+  body_add_par("Resultados del Modelo 1", style = "heading 1") %>%
+  body_add_flextable(tabla_flex1) %>%
+  body_add_par("") %>%  # Espacio entre tablas
+
+  body_add_par("Resultados del Modelo 2", style = "heading 1") %>%
+  body_add_flextable(tabla_flex2) %>%
+  body_add_par("") %>%  # Espacio entre tablas
+
+  body_add_par("Resultados del Modelo 3", style = "heading 1") %>%
+  body_add_flextable(tabla_flex3)
+
+# Guardar el documento
+print(doc, target = "resultados_logistica.docx")
+
+```
 
 \`\`\`  
 
