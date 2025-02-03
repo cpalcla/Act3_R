@@ -132,7 +132,7 @@ view(pca_result$rotation)
 ```
 
 Utilizando la función get_pca_var() de la librería factoextra, se obtiene diferente información del PCA. El objeto "coord" muestra las coordendas en el eje X e Y de las diferentes variables para construir un grafico de dispersión. En "cor" aparecen las correlaciones entre las variables y las dimensiones y en "cos2" la calidad de la variable.
-```{r, echo=FALSE}}
+```{r, echo=FALSE}
 var<- get_pca_var(pca_result)
 var$contrib
 ```
